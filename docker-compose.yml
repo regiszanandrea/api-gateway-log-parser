@@ -1,0 +1,27 @@
+version: "3"
+
+services:
+
+  apigatewaylog-parser:
+    env_file:
+      - .env
+    build: .
+    container_name: apigatewaylog-parser
+    volumes:
+      - "./assets:/data"
+
+  dynamodb:
+    image: "dwmkerr/dynamodb"
+    container_name: dynamodb
+    ports:
+      - "8000:8000"
+    volumes:
+      - "dynamodb_data:/data"
+    command: -sharedDb
+    depends_on:
+      - apigatewaylog-parser
+
+
+volumes:
+  dynamodb_data:
+  assets:

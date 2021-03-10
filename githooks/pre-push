@@ -1,0 +1,19 @@
+#!/bin/bash
+
+#. Change to "no" if you need to disable output messages .#
+OUTPUT="yes";
+
+
+if make local-test; then
+    echo "Unit tests has successfully completed"
+else
+    echo "Some error occurred running the unit tests"
+    exit 1
+fi
+
+if make local-integration-test ; then
+    echo "Integration tests has successfully completed"
+else
+    echo "Some error occurred running the Integration tests"
+    exit 1
+fi

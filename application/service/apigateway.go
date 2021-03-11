@@ -9,9 +9,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"sync"
 	"time"
 )
+
+const itemsPerPage = 1000
 
 type ApiGatewayLogService struct {
 	repo       *repository.ApiGatewayLogRepository
@@ -54,7 +57,7 @@ func (a *ApiGatewayLogService) Parse(path string) error {
 		}
 
 		apiGatewayLog.ServiceID = apiGatewayLog.Service.ID
-		apiGatewayLog.CustomerID = apiGatewayLog.AuthenticatedEntity.ConsumerID.UUID
+		apiGatewayLog.ConsumerID = apiGatewayLog.AuthenticatedEntity.ConsumerID.UUID
 
 		logs = append(logs, &apiGatewayLog)
 
@@ -77,9 +80,39 @@ func (a *ApiGatewayLogService) Parse(path string) error {
 }
 
 func (a *ApiGatewayLogService) ExportByService(service string) error {
-	limit := 200
+	fileName := generateFileName("service", service)
 
-	columns := apigateway.GetJsonFieldsFromLogStruct()
+	var buffer bytes.Buffer
+	w := csv.NewWriter(&buffer)
+	defer w.Flush()
+
+	err := a.writeColumns(w, fileName, &buffer)
+	if err != nil {
+		return err
+	}
+
+	for {
+		logs, err := a.repo.GetByService(service, itemsPerPage)
+
+		if err != nil {
+			return err
+		}
+
+		if logs == nil {
+			break
+		}
+
+		err = a.WriteLogsToFile(logs, w, fileName, &buffer)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (a *ApiGatewayLogService) ExportByConsumer(consumer string) error {
+	fileName := generateFileName("consumer", consumer)
 
 	var buffer bytes.Buffer
 
@@ -105,19 +138,31 @@ func (a *ApiGatewayLogService) ExportByService(service string) error {
 			break
 		}
 
-		values := getValuesFromLogs(logs)
-
-		err = w.WriteAll(values)
-
+		err = a.WriteLogsToFile(logs, w, fileName, &buffer)
 		if err != nil {
 			return err
 		}
-
-		fileName := fmt.Sprintf("service-%s-%s.csv", service, time.Now().Format("02-01-2006-15-04-05"))
-
-		a.filesystem.Write(fileName, buffer.String())
 	}
 
+	return nil
+}
+
+func (a *ApiGatewayLogService) WriteLogsToFile(logs []*apigateway.Log, w *csv.Writer, fileName string, buffer *bytes.Buffer) error {
+	values := getValuesFromLogs(logs)
+
+	err := w.WriteAll(values)
+
+	if err != nil {
+		return err
+	}
+
+	err = a.filesystem.Write(fileName, buffer.String())
+
+	if err != nil {
+		return err
+	}
+
+	buffer.Reset()
 	return nil
 }
 
@@ -128,6 +173,33 @@ func (a *ApiGatewayLogService) addLogs(logs []*apigateway.Log, wg *sync.WaitGrou
 	}
 
 	defer wg.Done()
+}
+
+func generateFileName(prefix string, id string) string {
+	rand.Seed(time.Now().UnixNano())
+	return fmt.Sprintf("%s-%s-%s-%d.csv", prefix, id, time.Now().Format("02-01-2006"), rand.Uint32())
+}
+
+func (a *ApiGatewayLogService) writeColumns(w *csv.Writer, fileName string, buffer *bytes.Buffer) error {
+	columns := apigateway.GetJsonFieldsFromLogStruct()
+	separator := ';'
+	w.Comma = separator
+	err := w.WriteAll([][]string{columns})
+
+	if err != nil {
+		return err
+	}
+
+	err = a.filesystem.Write(fileName, buffer.String())
+
+	if err != nil {
+		return err
+	}
+
+	defer w.Flush()
+	defer buffer.Reset()
+
+	return nil
 }
 
 func getValuesFromLogs(logs []*apigateway.Log) [][]string {

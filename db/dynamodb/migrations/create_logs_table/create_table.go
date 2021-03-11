@@ -58,6 +58,10 @@ func main() {
 						AttributeName: aws.String("consumer_id"),
 						KeyType:       aws.String("HASH"),
 					},
+					{
+						AttributeName: aws.String("started_at"),
+						KeyType:       aws.String("RANGE"),
+					},
 				},
 				Projection: &dynamodb.Projection{
 					ProjectionType: aws.String(dynamodb.ProjectionTypeAll),

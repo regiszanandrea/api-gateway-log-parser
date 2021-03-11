@@ -20,11 +20,12 @@ var (
 )
 
 type Container struct {
-	logParserHandler        func(c context.Context) error
-	exportByServiceHandler  func(c context.Context) error
-	exportByConsumerHandler func(c context.Context) error
-	apiGatewayRepository    *repository.ApiGatewayLogRepository
-	apiGatewayLogService    *service.ApiGatewayLogService
+	logParserHandler              func(c context.Context) error
+	exportByServiceHandler        func(c context.Context) error
+	exportByConsumerHandler       func(c context.Context) error
+	exportMetricsByServiceHandler func(c context.Context) error
+	apiGatewayRepository          *repository.ApiGatewayLogRepository
+	apiGatewayLogService          *service.ApiGatewayLogService
 }
 
 func NewContainer() *Container {
@@ -45,6 +46,14 @@ func (c *Container) GetExportByServiceHandler() func(c context.Context) error {
 	}
 
 	return c.exportByServiceHandler
+}
+
+func (c *Container) GetExportMetricsByServiceHandler() func(c context.Context) error {
+	if c.exportMetricsByServiceHandler == nil {
+		c.exportMetricsByServiceHandler = handler.NewExportMetricsByServiceHandler(c.MustGetApiGatewayLogService()).HandleExportMetricsByService
+	}
+
+	return c.exportMetricsByServiceHandler
 }
 
 func (c *Container) GetExportByConsumerHandler() func(c context.Context) error {

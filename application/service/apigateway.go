@@ -119,16 +119,13 @@ func (a *ApiGatewayLogService) ExportByConsumer(consumer string) error {
 	w := csv.NewWriter(&buffer)
 	defer w.Flush()
 
-	separator := ';'
-	w.Comma = separator
-	err := w.Write(columns)
-
+	err := a.writeColumns(w, fileName, &buffer)
 	if err != nil {
 		return err
 	}
 
 	for {
-		logs, err := a.repo.GetByService(service, limit)
+		logs, err := a.repo.GetByConsumer(consumer, itemsPerPage)
 
 		if err != nil {
 			return err

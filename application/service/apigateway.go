@@ -102,7 +102,7 @@ func (a *ApiGatewayLogService) ExportByService(service string) error {
 			break
 		}
 
-		err = a.WriteLogsToFile(logs, w, fileName, &buffer)
+		err = a.writeLogsToFile(logs, w, fileName, &buffer)
 		if err != nil {
 			return err
 		}
@@ -135,7 +135,7 @@ func (a *ApiGatewayLogService) ExportByConsumer(consumer string) error {
 			break
 		}
 
-		err = a.WriteLogsToFile(logs, w, fileName, &buffer)
+		err = a.writeLogsToFile(logs, w, fileName, &buffer)
 		if err != nil {
 			return err
 		}
@@ -144,7 +144,7 @@ func (a *ApiGatewayLogService) ExportByConsumer(consumer string) error {
 	return nil
 }
 
-func (a *ApiGatewayLogService) WriteLogsToFile(logs []*apigateway.Log, w *csv.Writer, fileName string, buffer *bytes.Buffer) error {
+func (a *ApiGatewayLogService) writeLogsToFile(logs []*apigateway.Log, w *csv.Writer, fileName string, buffer *bytes.Buffer) error {
 	values := getValuesFromLogs(logs)
 
 	err := w.WriteAll(values)
@@ -172,11 +172,6 @@ func (a *ApiGatewayLogService) addLogs(logs []*apigateway.Log, wg *sync.WaitGrou
 	defer wg.Done()
 }
 
-func generateFileName(prefix string, id string) string {
-	rand.Seed(time.Now().UnixNano())
-	return fmt.Sprintf("%s-%s-%s-%d.csv", prefix, id, time.Now().Format("02-01-2006"), rand.Uint32())
-}
-
 func (a *ApiGatewayLogService) writeColumns(w *csv.Writer, fileName string, buffer *bytes.Buffer) error {
 	columns := apigateway.GetJsonFieldsFromLogStruct()
 	separator := ';'
@@ -197,6 +192,11 @@ func (a *ApiGatewayLogService) writeColumns(w *csv.Writer, fileName string, buff
 	defer buffer.Reset()
 
 	return nil
+}
+
+func generateFileName(prefix string, id string) string {
+	rand.Seed(time.Now().UnixNano())
+	return fmt.Sprintf("%s-%s-%s-%d.csv", prefix, id, time.Now().Format("02-01-2006"), rand.Uint32())
 }
 
 func getValuesFromLogs(logs []*apigateway.Log) [][]string {

@@ -22,3 +22,7 @@ func (a *ApiGatewayLogRepository) Add(log ...*apigateway.Log) error {
 func (a *ApiGatewayLogRepository) GetByService(service string, limit int) ([]*apigateway.Log, error) {
 	return a.driver.GetByService(service, limit)
 }
+
+func (a *ApiGatewayLogRepository) GetByConsumer(consumer string, limit int) ([]*apigateway.Log, error) {
+	return a.driver.GetByConsumer(consumer, limit)
+}

@@ -7,7 +7,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"os"
 	"strconv"
 )
 
@@ -18,22 +17,24 @@ func CreateDynamoSess(url string, region string) *dynamodb.DynamoDB {
 	}))
 
 	return dynamodb.New(sess, &aws.Config{
-		Endpoint: aws.String(os.Getenv("DYNAMODB_URL")),
-		Region:   aws.String(os.Getenv("DYNAMODB_REGION")),
+		Endpoint: aws.String(url),
+		Region:   aws.String(region),
 	})
 }
 
 type dynamoDB struct {
-	tableName        string
 	db               *dynamodb.DynamoDB
+	tableName        string
+	consumerIndex    string
 	startKey         map[string]*dynamodb.AttributeValue
 	lastPageAchieved bool
 }
 
-func NewDynamoDBDriver(tableName string, db *dynamodb.DynamoDB) (ApiGatewayLogDriver, error) {
+func NewDynamoDBDriver(tableName string, db *dynamodb.DynamoDB, consumerIndex string) (ApiGatewayLogDriver, error) {
 	return &dynamoDB{
-		tableName: tableName,
-		db:        db,
+		tableName:     tableName,
+		db:            db,
+		consumerIndex: consumerIndex,
 	}, nil
 }
 
@@ -89,7 +90,7 @@ func (d *dynamoDB) GetTableName() string {
 	return d.tableName
 }
 
-func (d *dynamoDB) GetByService(service string, limit int) ([]*apigateway.Log, error) {
+func (d *dynamoDB) GetByService(serviceId string, limit int) ([]*apigateway.Log, error) {
 	if d.lastPageAchieved {
 		return nil, nil
 	}
@@ -98,13 +99,37 @@ func (d *dynamoDB) GetByService(service string, limit int) ([]*apigateway.Log, e
 		TableName: &d.tableName,
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":value": {
-				S: &service,
+				S: &serviceId,
 			},
 		},
 		Limit:                  aws.Int64(int64(limit)),
 		KeyConditionExpression: aws.String(fmt.Sprintf("%s = :value", "service_id")),
 	}
 
+	return d.getLogsByQuery(input)
+}
+
+func (d *dynamoDB) GetByConsumer(consumerId string, limit int) ([]*apigateway.Log, error) {
+	if d.lastPageAchieved {
+		return nil, nil
+	}
+
+	input := &dynamodb.QueryInput{
+		TableName: &d.tableName,
+		IndexName: aws.String(d.consumerIndex),
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":value": {
+				S: &consumerId,
+			},
+		},
+		Limit:                  aws.Int64(int64(limit)),
+		KeyConditionExpression: aws.String(fmt.Sprintf("%s = :value", "consumer_id")),
+	}
+
+	return d.getLogsByQuery(input)
+}
+
+func (d *dynamoDB) getLogsByQuery(input *dynamodb.QueryInput) ([]*apigateway.Log, error) {
 	if d.startKey != nil {
 		input.ExclusiveStartKey = d.startKey
 	}
@@ -121,7 +146,11 @@ func (d *dynamoDB) GetByService(service string, limit int) ([]*apigateway.Log, e
 		return nil, nil
 	}
 
-	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, &logs)
+	return d.convertToLogs(result, logs)
+}
+
+func (d *dynamoDB) convertToLogs(result *dynamodb.QueryOutput, logs []*apigateway.Log) ([]*apigateway.Log, error) {
+	err := dynamodbattribute.UnmarshalListOfMaps(result.Items, &logs)
 
 	if err != nil {
 		return nil, err
@@ -140,18 +169,36 @@ func (d *dynamoDB) GetByService(service string, limit int) ([]*apigateway.Log, e
 
 	startedAt := strconv.Itoa(int(lastLog.StartedAt))
 
-	d.startKey = generateStartKey(lastLog, startedAt)
+	if lastLog.ConsumerID != "" {
+		d.startKey = generateConsumerStartKey(lastLog, startedAt)
+		return logs, nil
+	}
 
+	d.startKey = generateServiceStartKey(lastLog, startedAt)
 	return logs, nil
 }
 
-func generateStartKey(lastLog *apigateway.Log, startedAt string) map[string]*dynamodb.AttributeValue {
+func generateServiceStartKey(lastLog *apigateway.Log, startedAt string) map[string]*dynamodb.AttributeValue {
 	return map[string]*dynamodb.AttributeValue{
 		"service_id": {
 			S: aws.String(lastLog.ServiceID),
 		},
 		"started_at": {
 			N: aws.String(startedAt),
+		},
+	}
+}
+
+func generateConsumerStartKey(lastLog *apigateway.Log, startedAt string) map[string]*dynamodb.AttributeValue {
+	return map[string]*dynamodb.AttributeValue{
+		"service_id": {
+			S: aws.String(lastLog.ServiceID),
+		},
+		"started_at": {
+			N: aws.String(startedAt),
+		},
+		"consumer_id": {
+			S: aws.String(lastLog.ConsumerID),
 		},
 	}
 }

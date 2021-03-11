@@ -5,8 +5,9 @@ import (
 )
 
 type ApiGatewayLogDriver interface {
-	Add(log *apigateway.Log) error
-	AddBatch(...*apigateway.Log) error
 	GetTableName() string
 	Client() interface{}
+	Add(log *apigateway.Log) error
+	AddBatch(...*apigateway.Log) error
+	GetByService(service string, limit int) ([]*apigateway.Log, error)
 }

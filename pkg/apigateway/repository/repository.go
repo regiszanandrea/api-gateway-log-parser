@@ -18,3 +18,7 @@ func NewApiGatewayLogRepository(driver driver.ApiGatewayLogDriver) *ApiGatewayLo
 func (a *ApiGatewayLogRepository) Add(log ...*apigateway.Log) error {
 	return a.driver.AddBatch(log...)
 }
+
+func (a *ApiGatewayLogRepository) GetByService(service string, limit int) ([]*apigateway.Log, error) {
+	return a.driver.GetByService(service, limit)
+}

@@ -8,10 +8,10 @@ import (
 )
 
 type LogParserHandler struct {
-	service apigateway.ApiGatewayLogService
+	service apigateway.LogService
 }
 
-func NewLogParserHandler(service apigateway.ApiGatewayLogService) *LogParserHandler {
+func NewLogParserHandler(service apigateway.LogService) *LogParserHandler {
 	return &LogParserHandler{service: service}
 }
 

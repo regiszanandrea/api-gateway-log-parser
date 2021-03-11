@@ -19,9 +19,10 @@ var (
 )
 
 type Container struct {
-	logParserHandler     func(c context.Context) error
-	apiGatewayRepository *repository.ApiGatewayLogRepository
-	apiGatewayLogService *service.ApiGatewayLogService
+	logParserHandler       func(c context.Context) error
+	exportByServiceHandler func(c context.Context) error
+	apiGatewayRepository   *repository.ApiGatewayLogRepository
+	apiGatewayLogService   *service.ApiGatewayLogService
 }
 
 func NewContainer() *Container {
@@ -36,7 +37,15 @@ func (c *Container) GetLogParserHandler() func(c context.Context) error {
 	return c.logParserHandler
 }
 
-func (c *Container) MustGetApiGatewayLogService() apigateway.ApiGatewayLogService {
+func (c *Container) GetExportByServiceHandler() func(c context.Context) error {
+	if c.exportByServiceHandler == nil {
+		c.exportByServiceHandler = handler.NewExportByServiceHandler(c.MustGetApiGatewayLogService()).HandleExportByService
+	}
+
+	return c.exportByServiceHandler
+}
+
+func (c *Container) MustGetApiGatewayLogService() apigateway.LogService {
 	s, err := c.GetApiGatewayLogService()
 	if err != nil {
 		panic(err)

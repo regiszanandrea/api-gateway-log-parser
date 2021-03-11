@@ -1,5 +1,11 @@
 package apigateway
 
+import (
+	"encoding/json"
+	"reflect"
+	"strconv"
+)
+
 type Log struct {
 	Request             Request             `json:"request"`
 	UpstreamURI         string              `json:"upstream_uri"`
@@ -88,6 +94,41 @@ type Latencies struct {
 	Request int `json:"request"`
 }
 
-type ApiGatewayLogService interface {
+type LogService interface {
 	Parse(path string) error
+	ExportByService(service string) error
+}
+
+func GetJsonFieldsFromLogStruct() []string {
+	var columns []string
+
+	val := reflect.ValueOf(Log{})
+	for i := 0; i < val.Type().NumField(); i++ {
+		columns = append(columns, val.Type().Field(i).Tag.Get("json"))
+	}
+
+	return columns
+}
+
+func (l *Log) ToSlice() []string {
+	request, _ := json.Marshal(l.Request)
+	response, _ := json.Marshal(l.Response)
+	authenticatedEntity, _ := json.Marshal(l.AuthenticatedEntity)
+	route, _ := json.Marshal(l.Route)
+	service, _ := json.Marshal(l.Service)
+	latencies, _ := json.Marshal(l.Latencies)
+
+	return []string{
+		string(request),
+		l.UpstreamURI,
+		string(response),
+		string(authenticatedEntity),
+		string(route),
+		string(service),
+		string(latencies),
+		l.ClientIP,
+		strconv.Itoa(int(l.StartedAt)),
+		l.ServiceID,
+		l.CustomerID,
+	}
 }

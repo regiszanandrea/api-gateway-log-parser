@@ -16,13 +16,15 @@ var (
 	apiGatewayLogsTableName = os.Getenv("API_GATEWAY_LOGS_TABLE_NAME_TABLE")
 	dynamoURL               = os.Getenv("DYNAMODB_URL")
 	dynamoRegion            = os.Getenv("DYNAMODB_REGION")
+	consumerIndex           = os.Getenv("DYNAMODB_CONSUMER_INDEX")
 )
 
 type Container struct {
-	logParserHandler       func(c context.Context) error
-	exportByServiceHandler func(c context.Context) error
-	apiGatewayRepository   *repository.ApiGatewayLogRepository
-	apiGatewayLogService   *service.ApiGatewayLogService
+	logParserHandler        func(c context.Context) error
+	exportByServiceHandler  func(c context.Context) error
+	exportByConsumerHandler func(c context.Context) error
+	apiGatewayRepository    *repository.ApiGatewayLogRepository
+	apiGatewayLogService    *service.ApiGatewayLogService
 }
 
 func NewContainer() *Container {
@@ -43,6 +45,14 @@ func (c *Container) GetExportByServiceHandler() func(c context.Context) error {
 	}
 
 	return c.exportByServiceHandler
+}
+
+func (c *Container) GetExportByConsumerHandler() func(c context.Context) error {
+	if c.exportByConsumerHandler == nil {
+		c.exportByConsumerHandler = handler.NewExportByConsumerHandler(c.MustGetApiGatewayLogService()).HandleExportByConsumer
+	}
+
+	return c.exportByConsumerHandler
 }
 
 func (c *Container) MustGetApiGatewayLogService() apigateway.LogService {
@@ -100,6 +110,7 @@ func (c *Container) GetApiGatewayLogDriver() (driver.ApiGatewayLogDriver, error)
 	d, err := driver.NewDynamoDBDriver(
 		apiGatewayLogsTableName,
 		driver.CreateDynamoSess(dynamoURL, dynamoRegion),
+		consumerIndex,
 	)
 
 	if err != nil {

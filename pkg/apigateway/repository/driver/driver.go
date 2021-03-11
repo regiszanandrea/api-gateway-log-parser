@@ -9,5 +9,6 @@ type ApiGatewayLogDriver interface {
 	Client() interface{}
 	Add(log *apigateway.Log) error
 	AddBatch(...*apigateway.Log) error
-	GetByService(service string, limit int) ([]*apigateway.Log, error)
+	GetByService(serviceId string, limit int) ([]*apigateway.Log, error)
+	GetByConsumer(consumerId string, limit int) ([]*apigateway.Log, error)
 }

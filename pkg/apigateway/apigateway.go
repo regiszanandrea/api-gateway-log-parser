@@ -17,7 +17,7 @@ type Log struct {
 	ClientIP            string              `json:"client_ip"`
 	StartedAt           int64               `json:"started_at"`
 	ServiceID           string              `json:"service_id"`
-	CustomerID          string              `json:"customer_id"`
+	ConsumerID          string              `json:"consumer_id"`
 }
 
 type Request struct {
@@ -97,6 +97,7 @@ type Latencies struct {
 type LogService interface {
 	Parse(path string) error
 	ExportByService(service string) error
+	ExportByConsumer(consumer string) error
 }
 
 func GetJsonFieldsFromLogStruct() []string {
@@ -129,6 +130,6 @@ func (l *Log) ToSlice() []string {
 		l.ClientIP,
 		strconv.Itoa(int(l.StartedAt)),
 		l.ServiceID,
-		l.CustomerID,
+		l.ConsumerID,
 	}
 }

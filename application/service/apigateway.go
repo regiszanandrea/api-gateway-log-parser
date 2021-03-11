@@ -43,9 +43,13 @@ func (a *ApiGatewayLogService) Parse(path string) error {
 
 	var wg sync.WaitGroup
 
+	i := 0
 	logsBatchMaxLen := 200
 
 	for scanner.Scan() {
+		if i > 20000 {
+			break
+		}
 		var apiGatewayLog apigateway.Log
 
 		line := []byte(a.filesystem.GetLine(scanner))
@@ -68,6 +72,7 @@ func (a *ApiGatewayLogService) Parse(path string) error {
 
 			logs = nil
 		}
+		i += 1
 	}
 
 	wg.Wait()
@@ -139,6 +144,74 @@ func (a *ApiGatewayLogService) ExportByConsumer(consumer string) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (a *ApiGatewayLogService) ExportMetricsByService(service string) error {
+	fileName := generateFileName("metrics", service)
+
+	var buffer bytes.Buffer
+	w := csv.NewWriter(&buffer)
+	defer w.Flush()
+
+	columns := []string{"service", "request_avg", "proxy_avg", "gateway_avg"}
+
+	separator := ';'
+	w.Comma = separator
+	err := w.WriteAll([][]string{columns})
+
+	if err != nil {
+		return err
+	}
+
+	var requestAvg, proxyAvg, gatewayAvg float64
+	var requestSum, proxySum, gatewaySum int
+
+	numberOfLogs := 0
+
+	for {
+		logs, err := a.repo.GetByService(service, itemsPerPage)
+
+		if err != nil {
+			return err
+		}
+
+		if logs == nil {
+			break
+		}
+
+		for _, l := range logs {
+			requestSum += l.Latencies.Request
+			proxySum += l.Latencies.Proxy
+			gatewaySum += l.Latencies.Gateway
+
+			numberOfLogs += 1
+		}
+	}
+
+	requestAvg = float64(requestSum) / float64(numberOfLogs)
+	proxyAvg = float64(proxySum) / float64(numberOfLogs)
+	gatewayAvg = float64(gatewaySum) / float64(numberOfLogs)
+
+	metrics := []string{
+		service,
+		fmt.Sprintf("%.2f", requestAvg),
+		fmt.Sprintf("%.2f", proxyAvg),
+		fmt.Sprintf("%.2f", gatewayAvg),
+	}
+
+	err = w.WriteAll([][]string{metrics})
+
+	if err != nil {
+		return err
+	}
+
+	err = a.filesystem.Write(fileName, buffer.String())
+
+	if err != nil {
+		return err
 	}
 
 	return nil

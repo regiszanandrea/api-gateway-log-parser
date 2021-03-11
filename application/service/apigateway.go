@@ -40,13 +40,9 @@ func (a *ApiGatewayLogService) Parse(path string) error {
 
 	var wg sync.WaitGroup
 
-	i := 0
 	logsBatchMaxLen := 200
 
 	for scanner.Scan() {
-		if i > 200 {
-			break
-		}
 		var apiGatewayLog apigateway.Log
 
 		line := []byte(a.filesystem.GetLine(scanner))
@@ -69,7 +65,6 @@ func (a *ApiGatewayLogService) Parse(path string) error {
 
 			logs = nil
 		}
-		i += 1
 	}
 
 	wg.Wait()

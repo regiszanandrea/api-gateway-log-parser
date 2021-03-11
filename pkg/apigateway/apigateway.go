@@ -98,6 +98,7 @@ type LogService interface {
 	Parse(path string) error
 	ExportByService(service string) error
 	ExportByConsumer(consumer string) error
+	ExportMetricsByService(service string) error
 }
 
 func GetJsonFieldsFromLogStruct() []string {

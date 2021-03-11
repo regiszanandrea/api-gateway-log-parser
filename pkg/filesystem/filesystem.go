@@ -9,4 +9,5 @@ type API interface {
 	Open(path string) (*os.File, error)
 	GetScanner(file *os.File) *bufio.Scanner
 	GetLine(scanner *bufio.Scanner) string
+	Write(path string, data string) error
 }

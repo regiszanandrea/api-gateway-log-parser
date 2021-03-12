@@ -13,6 +13,15 @@ migrate:
 parse:
 	docker exec -it apigatewaylog-parser /bin/sh -c "bin/apigateway_log_parser ${FILE_PATH}"
 
+export-by-service:
+	docker exec -it apigatewaylog-parser /bin/sh -c "bin/export_by_service ${SERVICE}"
+
+export-by-consumer:
+	docker exec -it apigatewaylog-parser /bin/sh -c "bin/export_by_consumer ${CONSUMER}"
+
+export-metrics-by-service:
+	docker exec -it apigatewaylog-parser /bin/sh -c "bin/export_metrics_by_service ${SERVICE}"
+
 generate-coverage:
 	go test -coverprofile=cover.out -coverpkg=./... ./... -tags integration;go tool cover -html=cover.out
 

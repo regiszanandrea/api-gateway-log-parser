@@ -51,9 +51,11 @@ type ResponseHeaders struct {
 }
 
 type AuthenticatedEntity struct {
-	ConsumerID struct {
-		UUID string `json:"uuid"`
-	} `json:"consumer_id"`
+	ConsumerID Consumer `json:"consumer_id"`
+}
+
+type Consumer struct {
+	UUID string `json:"uuid"`
 }
 
 type Route struct {

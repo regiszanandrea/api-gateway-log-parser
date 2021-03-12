@@ -268,7 +268,7 @@ func (a *ApiGatewayLogService) writeColumns(w *csv.Writer, fileName string, buff
 
 func generateFileName(prefix string, id string) string {
 	rand.Seed(time.Now().UnixNano())
-	return fmt.Sprintf("%s-%s-%s-%d.csv", prefix, id, time.Now().Format("02-01-2006"), rand.Uint32())
+	return fmt.Sprintf("/data/%s-%s-%s-%d.csv", prefix, id, time.Now().Format("02-01-2006"), rand.Uint32())
 }
 
 func getValuesFromLogs(logs []*apigateway.Log) [][]string {

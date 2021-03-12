@@ -1,0 +1,15 @@
+.idea/
+
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+# Builds
+bin/
+
+cover.out
+
+.env
+*.log
+

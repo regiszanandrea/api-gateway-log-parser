@@ -77,7 +77,7 @@ func (c *Container) GetApiGatewayLogService() (*service.ApiGatewayLogService, er
 	if c.apiGatewayLogService == nil {
 		f := filesystem.NewLocalFileSystem()
 
-		s, err := service.NewLogParserService(c.MustGetApiGatewayLogRepository(), f)
+		s, err := service.NewApiGatewayLogParserService(c.MustGetApiGatewayLogRepository(), f)
 		if err != nil {
 			return nil, err
 		}

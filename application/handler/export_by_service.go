@@ -15,15 +15,20 @@ func NewExportByServiceHandler(service apigateway.LogService) *ExportByServiceHa
 	return &ExportByServiceHandler{service: service}
 }
 
+var (
+	ErrServiceParameterNotFound        = errors.New("service parameter not provided")
+	ErrServiceParameterCouldNotBeEmpty = errors.New("service parameter could not be empty")
+)
+
 func (h *ExportByServiceHandler) HandleExportByService(ctx context.Context) error {
 	if len(os.Args) < 2 {
-		return errors.New("service parameter not provided")
+		return ErrServiceParameterNotFound
 	}
 
 	service := os.Args[1]
 
 	if service == "" {
-		return errors.New("service parameter could not be empty")
+		return ErrServiceParameterCouldNotBeEmpty
 	}
 
 	return h.service.ExportByService(service)

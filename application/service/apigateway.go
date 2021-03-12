@@ -21,7 +21,7 @@ type ApiGatewayLogService struct {
 	filesystem filesystem.API
 }
 
-func NewLogParserService(repo *repository.ApiGatewayLogRepository, filesystem filesystem.API) (*ApiGatewayLogService, error) {
+func NewApiGatewayLogParserService(repo *repository.ApiGatewayLogRepository, filesystem filesystem.API) (*ApiGatewayLogService, error) {
 	return &ApiGatewayLogService{
 		repo:       repo,
 		filesystem: filesystem,
@@ -53,6 +53,10 @@ func (a *ApiGatewayLogService) Parse(path string) error {
 		var apiGatewayLog apigateway.Log
 
 		line := []byte(a.filesystem.GetLine(scanner))
+
+		if len(line) == 0 {
+			break
+		}
 
 		err = json.Unmarshal(line, &apiGatewayLog)
 

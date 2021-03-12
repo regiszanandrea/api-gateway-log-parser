@@ -3,7 +3,6 @@ package handler
 import (
 	"api-gateway-log-parser/pkg/apigateway"
 	"context"
-	"errors"
 	"os"
 )
 
@@ -17,13 +16,13 @@ func NewExportMetricsByServiceHandler(service apigateway.LogService) *ExportMetr
 
 func (h *ExportMetricsByServiceHandler) HandleExportMetricsByService(ctx context.Context) error {
 	if len(os.Args) < 2 {
-		return errors.New("service parameter not provided")
+		return ErrServiceParameterNotFound
 	}
 
 	service := os.Args[1]
 
 	if service == "" {
-		return errors.New("service parameter could not be empty")
+		return ErrServiceParameterCouldNotBeEmpty
 	}
 
 	return h.service.ExportMetricsByService(service)

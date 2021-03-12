@@ -90,7 +90,7 @@ func (d *dynamoDB) GetTableName() string {
 	return d.tableName
 }
 
-func (d *dynamoDB) GetByService(serviceId string, limit int) ([]*apigateway.Log, error) {
+func (d *dynamoDB) GetByService(serviceID string, limit int) ([]*apigateway.Log, error) {
 	if d.lastPageAchieved {
 		return nil, nil
 	}
@@ -99,7 +99,7 @@ func (d *dynamoDB) GetByService(serviceId string, limit int) ([]*apigateway.Log,
 		TableName: &d.tableName,
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":value": {
-				S: &serviceId,
+				S: &serviceID,
 			},
 		},
 		Limit:                  aws.Int64(int64(limit)),
@@ -109,7 +109,7 @@ func (d *dynamoDB) GetByService(serviceId string, limit int) ([]*apigateway.Log,
 	return d.getLogsByQuery(input)
 }
 
-func (d *dynamoDB) GetByConsumer(consumerId string, limit int) ([]*apigateway.Log, error) {
+func (d *dynamoDB) GetByConsumer(consumerID string, limit int) ([]*apigateway.Log, error) {
 	if d.lastPageAchieved {
 		return nil, nil
 	}
@@ -119,7 +119,7 @@ func (d *dynamoDB) GetByConsumer(consumerId string, limit int) ([]*apigateway.Lo
 		IndexName: aws.String(d.consumerIndex),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":value": {
-				S: &consumerId,
+				S: &consumerID,
 			},
 		},
 		Limit:                  aws.Int64(int64(limit)),

@@ -5,6 +5,10 @@
 - Docker
 - Docker Compose
 
+### Technologies
+- Golang
+- DynamoDB
+
 ### Optional Dependencies
 
 - [Golang](https://golang.org/doc/install)
@@ -24,7 +28,7 @@ make migrate
 ```
 
 3. Put the log file on `assets` folder, this folder will be visible on docker container, then execute the follow command
-   to parse the file:
+   to parse the file. This will take a few minutes, because of DynamoDB's limitation to store only 25 items per request.
 
 ```sh
 make FILE_PATH=/data/{fileName} parse
